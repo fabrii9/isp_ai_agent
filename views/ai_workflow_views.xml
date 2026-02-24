@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         ai.workflow — Form View
+    ==================================================================== -->
+    <record id="view_ai_workflow_form" model="ir.ui.view">
+        <field name="name">ai.workflow.form</field>
+        <field name="model">ai.workflow</field>
+        <field name="arch" type="xml">
+            <form string="Workflow AI">
+                <header>
+                    <button name="action_activate" string="Activar" type="object"
+                            class="btn-primary"
+                            invisible="state == 'active'"/>
+                    <button name="action_pause" string="Pausar" type="object"
+                            class="btn-warning"
+                            invisible="state != 'active'"/>
+                    <button name="execute" string="▶ Ejecutar ahora" type="object"
+                            class="btn-secondary"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,active,paused"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Trigger">
+                            <field name="trigger_type"/>
+                            <field name="trigger_model_id"/>
+                            <field name="trigger_domain"
+                                   invisible="trigger_type not in ('invoice_overdue','ticket_created','payment_approved')"/>
+                            <field name="trigger_cron_interval"
+                                   invisible="trigger_type != 'cron'"/>
+                        </group>
+                        <group string="Agente">
+                            <field name="agent_id"/>
+                            <field name="company_id"/>
+                        </group>
+                    </group>
+                    <group string="Estadísticas" invisible="state == 'draft'">
+                        <field name="last_run" readonly="1"/>
+                        <field name="run_count" readonly="1"/>
+                    </group>
+                    <field name="description" widget="text"
+                           placeholder="Descripción del workflow..."/>
+                    <separator string="Acciones"/>
+                    <field name="action_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="action_type"/>
+                            <field name="tool_id"
+                                   invisible="action_type != 'run_tool'"/>
+                            <field name="stop_on_error" widget="boolean_toggle"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ai.workflow — List View
+    ==================================================================== -->
+    <record id="view_ai_workflow_list" model="ir.ui.view">
+        <field name="name">ai.workflow.list</field>
+        <field name="model">ai.workflow</field>
+        <field name="arch" type="xml">
+            <list string="Workflows AI"
+                  decoration-success="state == 'active'"
+                  decoration-warning="state == 'paused'">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="trigger_type"/>
+                <field name="agent_id"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-warning="state == 'paused'"
+                       decoration-muted="state == 'draft'"/>
+                <field name="last_run"/>
+                <field name="run_count"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         Action window
+    ==================================================================== -->
+    <record id="action_ai_workflow" model="ir.actions.act_window">
+        <field name="name">Workflows AI</field>
+        <field name="res_model">ai.workflow</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay workflows configurados
+            </p>
+            <p>
+                Los workflows automatizan secuencias de acciones
+                (ej: factura vencida → notificar por WhatsApp).
+            </p>
+        </field>
+    </record>
+
+</odoo>

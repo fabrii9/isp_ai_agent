@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         ai.tool — Form View
+    ==================================================================== -->
+    <record id="view_ai_tool_form" model="ir.ui.view">
+        <field name="name">ai.tool.form</field>
+        <field name="model">ai.tool</field>
+        <field name="arch" type="xml">
+            <form string="Herramienta AI">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="nombre_tecnico_snake_case"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Identificación">
+                            <field name="display_name_custom"/>
+                            <field name="category"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Implementación">
+                            <field name="python_method"/>
+                            <field name="model_id"/>
+                        </group>
+                    </group>
+                    <group string="Descripción para el LLM">
+                        <field name="description" widget="text" nolabel="1"
+                               placeholder="Describe claramente qué hace esta herramienta y cuándo el LLM debe usarla..."/>
+                    </group>
+                    <group string="Parámetros (JSON Schema)">
+                        <field name="parameters_json" widget="ace" options="{'mode': 'json'}"
+                               nolabel="1"/>
+                    </group>
+                    <group string="Seguridad">
+                        <field name="requires_confirmation"/>
+                        <field name="requires_validated_partner"/>
+                        <field name="is_readonly"/>
+                    </group>
+                    <group string="Agentes que la usan">
+                        <field name="agent_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ai.tool — List View
+    ==================================================================== -->
+    <record id="view_ai_tool_list" model="ir.ui.view">
+        <field name="name">ai.tool.list</field>
+        <field name="model">ai.tool</field>
+        <field name="arch" type="xml">
+            <list string="Herramientas AI">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="display_name_custom"/>
+                <field name="category"/>
+                <field name="python_method"/>
+                <field name="requires_confirmation" widget="boolean_toggle"/>
+                <field name="requires_validated_partner" widget="boolean_toggle"/>
+                <field name="is_readonly" widget="boolean_toggle"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         Action window
+    ==================================================================== -->
+    <record id="action_ai_tool" model="ir.actions.act_window">
+        <field name="name">Herramientas AI</field>
+        <field name="res_model">ai.tool</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay herramientas configuradas
+            </p>
+            <p>
+                Las herramientas son funciones que el agente AI puede ejecutar
+                (consultar deuda, crear tickets, generar links de pago, etc.)
+            </p>
+        </field>
+    </record>
+
+</odoo>

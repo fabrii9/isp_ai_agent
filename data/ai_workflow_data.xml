@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ai_workflow_data.xml — Workflows de ejemplo precargados.
+
+    Demuestran los casos de uso más comunes del ISP.
+    Están en draft para que el administrador los active manualmente
+    después de configurar el agente.
+-->
+<odoo>
+    <data noupdate="1">
+
+        <!-- ===============================================================
+             Workflow: Consulta de deuda entrante por WhatsApp
+        =============================================================== -->
+        <record id="workflow_inbound_debt_query" model="ai.workflow">
+            <field name="name">WhatsApp — Consulta de Deuda</field>
+            <field name="sequence">10</field>
+            <field name="state">draft</field>
+            <field name="trigger_type">inbound_message</field>
+            <field name="description">
+Intercepta mensajes entrantes de WhatsApp.
+Si el agente AI está activo, lo invoca para responder consultas de deuda,
+generación de links de pago y reclamos técnicos.
+            </field>
+        </record>
+
+        <!-- ===============================================================
+             Workflow: Factura vencida → Notificación automática
+        =============================================================== -->
+        <record id="workflow_overdue_invoice_notification" model="ai.workflow">
+            <field name="name">Factura Vencida → Notificar por WhatsApp</field>
+            <field name="sequence">20</field>
+            <field name="state">draft</field>
+            <field name="trigger_type">invoice_overdue</field>
+            <field name="trigger_domain">[('payment_state','in',('not_paid','partial')),('invoice_date_due','&lt;', context_today())]</field>
+            <field name="description">
+Cuando una factura vence sin pago, el workflow envía un mensaje de WhatsApp
+al cliente con el monto adeudado y un link de pago.
+Activar solo después de configurar el agente y verificar el canal de WhatsApp.
+            </field>
+        </record>
+
+        <!-- ===============================================================
+             Workflow: Ticket creado → Acuse de recibo
+        =============================================================== -->
+        <record id="workflow_ticket_created_ack" model="ai.workflow">
+            <field name="name">Ticket Creado → Acuse de Recibo</field>
+            <field name="sequence">30</field>
+            <field name="state">draft</field>
+            <field name="trigger_type">ticket_created</field>
+            <field name="description">
+Cuando se crea un ticket de soporte, envía automáticamente un mensaje de acuse de recibo
+al cliente por WhatsApp con el número de ticket.
+            </field>
+        </record>
+
+    </data>
+</odoo>

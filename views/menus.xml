@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         Menú raíz: ISP AI Agent
+    ==================================================================== -->
+    <menuitem id="menu_ai_agent_root"
+              name="AI Agent"
+              sequence="85"
+              web_icon="isp_ai_agent,static/description/icon.png"
+              groups="isp_ai_agent.group_ai_operator"/>
+
+    <!-- ===================================================================
+         Sub-menú: Agentes
+    ==================================================================== -->
+    <menuitem id="menu_ai_agent_agents"
+              name="Agentes"
+              parent="menu_ai_agent_root"
+              sequence="10"/>
+
+    <menuitem id="menu_ai_agent_list"
+              name="Mis Agentes"
+              parent="menu_ai_agent_agents"
+              action="action_ai_agent"
+              sequence="10"
+              groups="isp_ai_agent.group_ai_operator"/>
+
+    <!-- ===================================================================
+         Sub-menú: Automatización
+    ==================================================================== -->
+    <menuitem id="menu_ai_agent_automation"
+              name="Automatización"
+              parent="menu_ai_agent_root"
+              sequence="20"
+              groups="isp_ai_agent.group_ai_manager"/>
+
+    <menuitem id="menu_ai_agent_tools"
+              name="Herramientas"
+              parent="menu_ai_agent_automation"
+              action="action_ai_tool"
+              sequence="10"
+              groups="isp_ai_agent.group_ai_manager"/>
+
+    <menuitem id="menu_ai_activation_rules"
+              name="Reglas de Activación"
+              parent="menu_ai_agent_automation"
+              action="action_ai_activation_rule"
+              sequence="20"
+              groups="isp_ai_agent.group_ai_manager"/>
+
+    <menuitem id="menu_ai_workflows"
+              name="Workflows"
+              parent="menu_ai_agent_automation"
+              action="action_ai_workflow"
+              sequence="30"
+              groups="isp_ai_agent.group_ai_manager"/>
+
+    <!-- ===================================================================
+         Sub-menú: Monitoreo
+    ==================================================================== -->
+    <menuitem id="menu_ai_monitoring"
+              name="Monitoreo"
+              parent="menu_ai_agent_root"
+              sequence="30"
+              groups="isp_ai_agent.group_ai_operator"/>
+
+    <menuitem id="menu_ai_logs"
+              name="Logs de Interacciones"
+              parent="menu_ai_monitoring"
+              action="action_ai_log"
+              sequence="10"
+              groups="isp_ai_agent.group_ai_operator"/>
+
+</odoo>

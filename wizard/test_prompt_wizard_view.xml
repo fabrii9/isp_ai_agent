@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_test_prompt_wizard_form" model="ir.ui.view">
+        <field name="name">ai.test.prompt.wizard.form</field>
+        <field name="model">ai.test.prompt.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Testear Prompt del Agente AI">
+                <group string="Configuración del Test">
+                    <field name="agent_id" readonly="state != 'draft'"/>
+                    <field name="partner_id"
+                           placeholder="Opcional: para incluir contexto del cliente"/>
+                    <field name="test_message" widget="text"
+                           placeholder="Ej: Hola, ¿cuánto debo?"/>
+                </group>
+
+                <footer invisible="state != 'draft'">
+                    <button name="action_run_test" string="▶ Ejecutar Test"
+                            type="object" class="btn-primary"/>
+                    <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                </footer>
+
+                <!-- Resultados -->
+                <group string="Resultados" invisible="state == 'draft'">
+                    <group>
+                        <field name="state" widget="badge"
+                               decoration-success="state == 'done'"
+                               decoration-danger="state == 'error'"
+                               readonly="1"/>
+                        <field name="execution_time" readonly="1"/>
+                        <field name="tokens_used" readonly="1"/>
+                        <field name="cost_usd" readonly="1"/>
+                    </group>
+                </group>
+
+                <notebook invisible="state == 'draft'">
+                    <page string="Respuesta del LLM">
+                        <field name="llm_response" widget="text" readonly="1" nolabel="1"
+                               placeholder="La respuesta aparecerá aquí..."/>
+                    </page>
+                    <page string="Tool Invocada" invisible="not tool_called">
+                        <group>
+                            <field name="tool_called" readonly="1"/>
+                            <field name="tool_result" widget="text" readonly="1"/>
+                        </group>
+                    </page>
+                    <page string="Prompt enviado">
+                        <field name="prompt_result" widget="text" readonly="1" nolabel="1"/>
+                    </page>
+                    <page string="Tools disponibles">
+                        <field name="tools_result" widget="text" readonly="1" nolabel="1"/>
+                    </page>
+                    <page string="Error" invisible="state != 'error'">
+                        <field name="error_message" widget="text" readonly="1" nolabel="1"
+                               class="text-danger"/>
+                    </page>
+                </notebook>
+
+                <footer invisible="state == 'draft'">
+                    <button name="action_run_test" string="Repetir Test"
+                            type="object" class="btn-secondary"/>
+                    <button string="Cerrar" class="btn-primary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>
