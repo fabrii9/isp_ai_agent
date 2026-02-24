@@ -33,38 +33,84 @@ class IspTools:
     # FACTURACIÓN / DEUDAS
     # =========================================================================
 
+    def execute_verify_identity(self, partner, vat=None, **kwargs) -> dict:
+        """
+        Verificar identidad del cliente comparando DNI/CUIT ingresado contra el
+        campo 'vat' del partner.
+
+        :param vat: DNI o CUIT ingresado por el cliente (puede tener guiones/espacios)
+        :return: {"verified": bool, "partner_name": str}
+        """
+        if not partner:
+            return {'error': True, 'message': 'Partner no identificado.'}
+        if not vat:
+            return {'verified': False, 'message': 'No se proporcionó DNI/CUIT.'}
+
+        # Normalizar: solo dígitos para comparar
+        def only_digits(s):
+            return ''.join(c for c in str(s) if c.isdigit())
+
+        input_digits = only_digits(vat)
+        stored_vat = only_digits(partner.vat or '')
+
+        if not stored_vat:
+            return {
+                'verified': False,
+                'message': 'El cliente no tiene DNI/CUIT registrado en el sistema.',
+            }
+
+        verified = input_digits == stored_vat
+        return {
+            'verified': verified,
+            'partner_name': partner.name if verified else None,
+            'message': 'Identidad verificada.' if verified else 'El DNI/CUIT no coincide con nuestros registros.',
+        }
+
     def execute_check_debt(self, partner, **kwargs) -> dict:
         """
-        Consultar deuda total del partner.
+        Consultar saldo real del partner usando las líneas de cuenta cobrable.
 
-        :return: {"total_debt": float, "overdue_count": int, "currency": str}
+        Captura: facturas impagas, pagos parciales, créditos a favor (saldo negativo)
+        y notas de crédito. Es el saldo real que ve contabilidad.
+
+        :return: {"balance": float, "has_debt": bool, "has_credit": bool, "currency": str}
         """
         if not partner:
             return {'error': True, 'message': 'Partner no identificado.'}
 
         try:
-            # Buscar facturas vencidas
-            invoices = self.env['account.move'].sudo().search([
+            # Consultar líneas de cuenta cobrable no reconciliadas
+            # Esto captura: facturas, notas de crédito, overpayments y créditos a favor
+            lines = self.env['account.move.line'].sudo().search([
                 ('partner_id', 'child_of', partner.id),
-                ('move_type', 'in', ('out_invoice', 'out_refund')),
-                ('state', '=', 'posted'),
-                ('payment_state', 'in', ('not_paid', 'partial')),
+                ('account_id.account_type', '=', 'asset_receivable'),
+                ('reconciled', '=', False),
+                ('move_id.state', '=', 'posted'),
             ])
 
-            total_debt = sum(inv.amount_residual for inv in invoices)
-            overdue = invoices.filtered(
-                lambda inv: inv.invoice_date_due and inv.invoice_date_due < datetime.now().date()
-            )
+            # balance > 0 → cliente debe dinero
+            # balance < 0 → cliente tiene crédito a favor (pagó de más)
+            balance = sum(lines.mapped('amount_residual'))
+
+            # Facturas vencidas (para dar contexto adicional)
+            overdue_invoices = self.env['account.move'].sudo().search([
+                ('partner_id', 'child_of', partner.id),
+                ('move_type', '=', 'out_invoice'),
+                ('state', '=', 'posted'),
+                ('payment_state', 'in', ('not_paid', 'partial')),
+                ('invoice_date_due', '<', datetime.now().date()),
+            ])
 
             currency = self.env.company.currency_id.name
 
             return {
                 'partner_name': partner.name,
-                'total_debt': round(total_debt, 2),
-                'overdue_count': len(overdue),
-                'total_invoice_count': len(invoices),
+                'balance': round(balance, 2),
+                'has_debt': balance > 0,
+                'has_credit': balance < 0,
+                'credit_amount': round(abs(balance), 2) if balance < 0 else 0,
+                'overdue_invoice_count': len(overdue_invoices),
                 'currency': currency,
-                'has_debt': total_debt > 0,
             }
         except Exception as e:
             _logger.error('check_debt error para partner [%s]: %s', partner.id, e)
@@ -182,44 +228,80 @@ class IspTools:
     def execute_create_ticket(self, partner, subject=None, description=None,
                               ticket_type=None, **kwargs) -> dict:
         """
-        Crear un ticket de soporte/reclamo para el partner.
+        Crear un ticket de soporte/reclamo en el módulo Helpdesk de Odoo.
 
-        :param subject: título del ticket
-        :param description: descripción detallada
+        :param subject: título del ticket (obligatorio — el agente debe pedírselo al cliente)
+        :param description: descripción detallada del problema
         :param ticket_type: 'technical' | 'billing' | 'general'
-        :return: {"ticket_id": int, "ticket_number": str, "message": str}
+        :return: {"ticket_id": int, "ticket_ref": str, "team": str}
         """
         if not partner:
             return {'error': True, 'message': 'Partner no identificado.'}
+        if not subject:
+            return {'error': True, 'needs_info': True,
+                    'message': 'Falta el asunto del reclamo. Pedíle al cliente que describa brevemente el problema.'}
 
         try:
-            # Buscar modelo helpdesk.ticket
             if 'helpdesk.ticket' not in self.env:
-                return {
-                    'error': True,
-                    'message': 'El módulo de Help Desk no está instalado.',
-                }
+                return {'error': True, 'message': 'El módulo Help Desk no está instalado.'}
 
-            # Obtener team por defecto
-            team = self.env['helpdesk.team'].sudo().search([], limit=1)
+            # Mapear ticket_type a nombre de equipo preferido
+            team_priority = {
+                'technical': ['Soporte Técnico', 'Técnico', 'Technical', 'Soporte'],
+                'billing':   ['Facturación', 'Billing', 'Administración', 'Soporte'],
+                'general':   ['Soporte', 'General', 'Help Desk'],
+            }
+            preferred_names = team_priority.get(ticket_type, ['Soporte', 'Help Desk'])
+
+            team = None
+            for tname in preferred_names:
+                team = self.env['helpdesk.team'].sudo().search(
+                    [('name', 'ilike', tname)], limit=1
+                )
+                if team:
+                    break
+            if not team:
+                # fallback: cualquier equipo
+                team = self.env['helpdesk.team'].sudo().search([], limit=1)
+
+            # Etiquetas opcionales según tipo
+            tag_map = {
+                'technical': 'técnico',
+                'billing':   'facturación',
+                'general':   'consulta',
+            }
+            tag_ids = []
+            if ticket_type and ticket_type in tag_map:
+                tag = self.env['helpdesk.tag'].sudo().search(
+                    [('name', 'ilike', tag_map[ticket_type])], limit=1
+                )
+                if tag:
+                    tag_ids = [(4, tag.id)]
 
             vals = {
-                'name': subject or f'Reclamo de {partner.name}',
+                'name': subject,
                 'partner_id': partner.id,
-                'description': description or 'Reclamo generado vía WhatsApp AI Agent',
-                'partner_email': partner.email,
-                'partner_phone': partner.phone or partner.mobile,
+                'partner_name': partner.name,
+                'partner_email': partner.email or '',
+                'partner_phone': partner.phone or partner.mobile or '',
+                'description': description or f'Reclamo generado vía WhatsApp por {partner.name}.',
             }
             if team:
                 vals['team_id'] = team.id
+            if tag_ids:
+                vals['tag_ids'] = tag_ids
 
             ticket = self.env['helpdesk.ticket'].sudo().create(vals)
 
+            # ticket_ref es el número auto-generado (ej: "DESK00012")
+            ticket_ref = ticket.ticket_ref or str(ticket.id)
+
             return {
                 'ticket_id': ticket.id,
-                'ticket_number': ticket.name,
+                'ticket_ref': ticket_ref,
+                'subject': ticket.name,
                 'team': team.name if team else 'Soporte',
-                'message': f'Ticket #{ticket.name} creado exitosamente.',
+                'message': f'Ticket {ticket_ref} creado exitosamente. El equipo de {team.name if team else "soporte"} se pondrá en contacto.',
             }
         except Exception as e:
             _logger.error('create_ticket error: %s', e)

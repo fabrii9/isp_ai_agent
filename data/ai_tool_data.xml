@@ -8,6 +8,36 @@
     <data noupdate="0">
 
         <!-- ===============================================================
+             IDENTIDAD
+        =============================================================== -->
+        <record id="tool_verify_identity" model="ai.tool">
+            <field name="name">verify_identity</field>
+            <field name="display_name_custom">Verificar Identidad</field>
+            <field name="sequence">5</field>
+            <field name="category">info</field>
+            <field name="description">
+Verifica la identidad del cliente comparando el DNI o CUIT que ingresó
+contra el registrado en el sistema.
+Usar ANTES de mostrar cualquier dato financiero o sensible.
+Pedirle al cliente su DNI o CUIT y luego llamar a esta tool con el valor ingresado.
+            </field>
+            <field name="python_method">execute_verify_identity</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "vat": {
+      "type": "string",
+      "description": "DNI o CUIT ingresado por el cliente. Puede incluir guiones o espacios."
+    }
+  },
+  "required": ["vat"]
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">False</field>
+            <field name="is_readonly">True</field>
+        </record>
+
+        <!-- ===============================================================
              FACTURACIÓN
         =============================================================== -->
         <record id="tool_check_debt" model="ai.tool">
@@ -97,9 +127,12 @@ ATENCIÓN: Esta acción puede requerir confirmación según la configuración de
             <field name="sequence">40</field>
             <field name="category">support</field>
             <field name="description">
-Crea un ticket de soporte o reclamo técnico para el cliente.
-Registra el motivo del reclamo y retorna el número de ticket.
-Usar cuando el cliente reporta un problema técnico, falla de servicio, reclamo, o queja.
+Crea un ticket de soporte o reclamo en el módulo Help Desk de Odoo.
+Antes de llamar a esta tool, SIEMPRE pedirle al cliente:
+1. Un breve asunto o título del problema (obligatorio → campo "subject")
+2. Una descripción más detallada si el cliente la da (opcional → campo "description")
+3. Clasificar el tipo: "technical" para problemas de conexión/señal, "billing" para facturas/pagos, "general" para cualquier otra consulta.
+Retorna el número de ticket (ej: DESK00012) que podés informarle al cliente como referencia.
             </field>
             <field name="python_method">execute_create_ticket</field>
             <field name="parameters_json">{

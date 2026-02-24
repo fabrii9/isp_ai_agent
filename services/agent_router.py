@@ -210,10 +210,11 @@ class AgentRouter:
     def _send_response(self, channel, text: str, agent):
         """Enviar mensaje de respuesta al canal de WhatsApp."""
         try:
-            # ai_agent_response=True evita que el hook vuelva a disparar el agente
+            # message_type='whatsapp_message' dispara el envío real por la API de WhatsApp.
+            # ai_agent_response=True evita que el hook vuelva a disparar el agente.
             channel.sudo().with_context(ai_agent_response=True).message_post(
                 body=text,
-                message_type='comment',
+                message_type='whatsapp_message',
                 subtype_xmlid='mail.mt_comment',
             )
         except Exception as e:
