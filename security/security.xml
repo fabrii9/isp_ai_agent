@@ -1,23 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Categoría de seguridad -->
+    <!-- Categoría de módulo -->
     <record id="module_category_ai_agent" model="ir.module.category">
         <field name="name">ISP360 AI Agent</field>
         <field name="description">Gestión del framework de agentes AI para ISP360</field>
         <field name="sequence">90</field>
     </record>
 
+    <!-- Privilege (reemplaza category_id en res.groups para Odoo 19) -->
+    <record id="res_groups_privilege_ai_agent" model="res.groups.privilege">
+        <field name="name">ISP360 AI Agent</field>
+        <field name="category_id" ref="module_category_ai_agent"/>
+        <field name="sequence">90</field>
+    </record>
+
     <!-- Grupo: AI Operator (acceso de lectura y operación) -->
     <record id="group_ai_operator" model="res.groups">
         <field name="name">AI Operator</field>
-        <field name="category_id" ref="module_category_ai_agent"/>
+        <field name="privilege_id" ref="res_groups_privilege_ai_agent"/>
     </record>
 
     <!-- Grupo: AI Manager (acceso total, incluye permisos de Operator) -->
     <record id="group_ai_manager" model="res.groups">
         <field name="name">AI Manager</field>
-        <field name="category_id" ref="module_category_ai_agent"/>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_ai_agent"/>
         <field name="implied_ids" eval="[(4, ref('group_ai_operator'))]"/>
-        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        <field name="user_ids" eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]"/>
     </record>
 </odoo>
