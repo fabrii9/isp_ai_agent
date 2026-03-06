@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ai_tool_data.xml — Tools precargadas para el agente ISP.
+    Estas tools se instalan automáticamente con el módulo.
+    Los parámetros JSON Schema siguen el formato de OpenAI function calling.
+-->
+<odoo>
+    <data noupdate="0">
+
+        <!-- ===============================================================
+             IDENTIDAD
+        =============================================================== -->
+        <record id="tool_verify_identity" model="ai.tool">
+            <field name="name">verify_identity</field>
+            <field name="display_name_custom">Verificar Identidad</field>
+            <field name="sequence">5</field>
+            <field name="category">info</field>
+            <field name="description">
+Verifica la identidad del cliente comparando el DNI o CUIT que ingresó
+contra el registrado en el sistema.
+Usar ANTES de mostrar cualquier dato financiero o sensible.
+Pedirle al cliente su DNI o CUIT y luego llamar a esta tool con el valor ingresado.
+            </field>
+            <field name="python_method">execute_verify_identity</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "vat": {
+      "type": "string",
+      "description": "DNI o CUIT ingresado por el cliente. Puede incluir guiones o espacios."
+    }
+  },
+  "required": ["vat"]
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">False</field>
+            <field name="is_readonly">True</field>
+        </record>
+
+        <!-- ===============================================================
+             FACTURACIÓN
+        =============================================================== -->
+        <record id="tool_check_debt" model="ai.tool">
+            <field name="name">check_debt</field>
+            <field name="display_name_custom">Consultar Deuda</field>
+            <field name="sequence">10</field>
+            <field name="category">billing</field>
+            <field name="description">
+Consulta la deuda total del cliente. Retorna el monto total adeudado,
+la cantidad de facturas vencidas y la moneda.
+Usar cuando el cliente pregunta cuánto debe, si tiene deuda, o sobre su estado de cuenta.
+            </field>
+            <field name="python_method">execute_check_debt</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {},
+  "required": []
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">True</field>
+        </record>
+
+        <record id="tool_list_overdue_invoices" model="ai.tool">
+            <field name="name">list_overdue_invoices</field>
+            <field name="display_name_custom">Listar Facturas Vencidas</field>
+            <field name="sequence">20</field>
+            <field name="category">billing</field>
+            <field name="description">
+Lista las facturas vencidas del cliente con número, fecha de vencimiento,
+monto adeudado y días de mora.
+Usar cuando el cliente quiere ver el detalle de sus facturas pendientes.
+            </field>
+            <field name="python_method">execute_list_overdue_invoices</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "limit": {
+      "type": "integer",
+      "description": "Cantidad máxima de facturas a mostrar. Default: 5",
+      "default": 5
+    }
+  },
+  "required": []
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">True</field>
+        </record>
+
+        <!-- ===============================================================
+             PAGOS
+        =============================================================== -->
+        <record id="tool_generate_payment_link" model="ai.tool">
+            <field name="name">generate_payment_link</field>
+            <field name="display_name_custom">Generar Link de Pago</field>
+            <field name="sequence">30</field>
+            <field name="category">payment</field>
+            <field name="description">
+Genera un link de pago para que el cliente pague su deuda o una factura específica.
+Retorna la URL de pago, el monto y la vigencia del link.
+Usar cuando el cliente quiere pagar, necesita el link de pago, o pregunta cómo abonar.
+ATENCIÓN: Esta acción puede requerir confirmación según la configuración del agente.
+            </field>
+            <field name="python_method">execute_generate_payment_link</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "invoice_id": {
+      "type": "integer",
+      "description": "ID de la factura específica a pagar. Si no se especifica, usa la más antigua vencida."
+    }
+  },
+  "required": []
+}</field>
+            <field name="requires_confirmation">True</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">False</field>
+        </record>
+
+        <!-- ===============================================================
+             SOPORTE
+        =============================================================== -->
+        <record id="tool_create_ticket" model="ai.tool">
+            <field name="name">create_ticket</field>
+            <field name="display_name_custom">Crear Ticket de Soporte</field>
+            <field name="sequence">40</field>
+            <field name="category">support</field>
+            <field name="description">
+Crea un ticket de soporte o reclamo en el módulo Help Desk de Odoo.
+Antes de llamar a esta tool, SIEMPRE pedirle al cliente:
+1. Un breve asunto o título del problema (obligatorio → campo "subject")
+2. Una descripción más detallada si el cliente la da (opcional → campo "description")
+3. Clasificar el tipo: "technical" para problemas de conexión/señal, "billing" para facturas/pagos, "general" para cualquier otra consulta.
+Retorna el número de ticket (ej: DESK00012) que podés informarle al cliente como referencia.
+            </field>
+            <field name="python_method">execute_create_ticket</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "subject": {
+      "type": "string",
+      "description": "Título del reclamo o problema reportado"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripción detallada del problema"
+    },
+    "ticket_type": {
+      "type": "string",
+      "enum": ["technical", "billing", "general"],
+      "description": "Tipo de reclamo"
+    }
+  },
+  "required": ["subject"]
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">False</field>
+        </record>
+
+        <record id="tool_list_open_tickets" model="ai.tool">
+            <field name="name">list_open_tickets</field>
+            <field name="display_name_custom">Ver Mis Reclamos</field>
+            <field name="sequence">50</field>
+            <field name="category">support</field>
+            <field name="description">
+Lista los tickets de soporte abiertos del cliente con su número, título y estado actual.
+Usar cuando el cliente pregunta por el estado de su reclamo o quiere ver sus tickets.
+            </field>
+            <field name="python_method">execute_list_open_tickets</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "limit": {
+      "type": "integer",
+      "description": "Cantidad máxima de tickets a mostrar. Default: 5",
+      "default": 5
+    }
+  },
+  "required": []
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">True</field>
+        </record>
+
+        <!-- ===============================================================
+             SERVICIOS ISP
+        =============================================================== -->
+        <record id="tool_service_status" model="ai.tool">
+            <field name="name">service_status</field>
+            <field name="display_name_custom">Estado del Servicio</field>
+            <field name="sequence">60</field>
+            <field name="category">service</field>
+            <field name="description">
+Consulta el estado actual de los servicios contratados por el cliente (Internet, etc.).
+Retorna la lista de servicios con su estado (activo, suspendido, etc.).
+Usar cuando el cliente pregunta si su servicio está activo, cortado, o suspendido.
+            </field>
+            <field name="python_method">execute_service_status</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {},
+  "required": []
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">True</field>
+        </record>
+
+        <record id="tool_suspend_service" model="ai.tool">
+            <field name="name">suspend_service</field>
+            <field name="display_name_custom">Suspender Servicio</field>
+            <field name="sequence">70</field>
+            <field name="category">service</field>
+            <field name="description">
+Suspende un servicio activo del cliente. Acción CRÍTICA que requiere confirmación explícita.
+Solo usar cuando el cliente solicita explícitamente la suspensión del servicio.
+            </field>
+            <field name="python_method">execute_suspend_service</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "contract_id": {
+      "type": "integer",
+      "description": "ID del contrato a suspender. Si no se especifica, suspende el activo."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Motivo de la suspensión"
+    }
+  },
+  "required": []
+}</field>
+            <field name="requires_confirmation">True</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">False</field>
+        </record>
+
+        <record id="tool_activate_service" model="ai.tool">
+            <field name="name">activate_service</field>
+            <field name="display_name_custom">Activar Servicio</field>
+            <field name="sequence">75</field>
+            <field name="category">service</field>
+            <field name="description">
+Activa o reactiva un servicio suspendido del cliente. Acción que requiere confirmación.
+Solo usar cuando el cliente solicita reactivar su servicio.
+            </field>
+            <field name="python_method">execute_activate_service</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "contract_id": {
+      "type": "integer",
+      "description": "ID del contrato a activar. Si no se especifica, activa el suspendido."
+    }
+  },
+  "required": []
+}</field>
+            <field name="requires_confirmation">True</field>
+            <field name="requires_validated_partner">True</field>
+            <field name="is_readonly">False</field>
+        </record>
+
+        <!-- ===============================================================
+             CRM
+        =============================================================== -->
+        <record id="tool_create_lead" model="ai.tool">
+            <field name="name">create_lead</field>
+            <field name="display_name_custom">Crear Lead</field>
+            <field name="sequence">80</field>
+            <field name="category">crm</field>
+            <field name="description">
+Crea un lead o prospecto en el CRM cuando alguien consulta por contratar el servicio.
+Usar cuando el contacto no es cliente y pregunta por planes, precios o contratar internet.
+            </field>
+            <field name="python_method">execute_create_lead</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del lead o descripción del interés"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detalle de lo que está buscando el prospecto"
+    }
+  },
+  "required": []
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">False</field>
+            <field name="is_readonly">False</field>
+        </record>
+
+        <record id="tool_qualify_lead" model="ai.tool">
+            <field name="name">qualify_lead</field>
+            <field name="display_name_custom">Calificar Lead</field>
+            <field name="sequence">85</field>
+            <field name="category">crm</field>
+            <field name="description">
+Califica un lead existente según el nivel de interés del prospecto.
+Usar después de create_lead cuando se tiene más información sobre el prospecto.
+            </field>
+            <field name="python_method">execute_qualify_lead</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "interest_level": {
+      "type": "string",
+      "enum": ["hot", "warm", "cold"],
+      "description": "Nivel de interés: hot=muy interesado, warm=interesado, cold=baja prioridad"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas adicionales sobre el prospecto"
+    }
+  },
+  "required": ["interest_level"]
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">False</field>
+            <field name="is_readonly">False</field>
+        </record>
+
+        <!-- ===============================================================
+             ESCALAMIENTO
+        =============================================================== -->
+        <record id="tool_escalate_to_human" model="ai.tool">
+            <field name="name">escalate_to_human</field>
+            <field name="display_name_custom">Escalar a Humano</field>
+            <field name="sequence">90</field>
+            <field name="category">escalation</field>
+            <field name="description">
+Escala la conversación a un agente humano cuando el problema supera las capacidades del bot.
+Usar cuando el cliente está enojado, tiene un problema muy específico, o solicita hablar con una persona.
+            </field>
+            <field name="python_method">execute_escalate_to_human</field>
+            <field name="parameters_json">{
+  "type": "object",
+  "properties": {
+    "reason": {
+      "type": "string",
+      "description": "Motivo del escalamiento"
+    }
+  },
+  "required": []
+}</field>
+            <field name="requires_confirmation">False</field>
+            <field name="requires_validated_partner">False</field>
+            <field name="is_readonly">False</field>
+        </record>
+
+    </data>
+</odoo>

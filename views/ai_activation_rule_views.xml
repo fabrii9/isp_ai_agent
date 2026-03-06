@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         ai.activation.rule — Form View
+    ==================================================================== -->
+    <record id="view_ai_activation_rule_form" model="ir.ui.view">
+        <field name="name">ai.activation.rule.form</field>
+        <field name="model">ai.activation.rule</field>
+        <field name="arch" type="xml">
+            <form string="Regla de Activación">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Nombre de la regla..."/></h1>
+                    </div>
+                    <group>
+                        <group string="Configuración">
+                            <field name="agent_id"/>
+                            <field name="priority"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Condición de Horario">
+                            <field name="schedule_enabled"/>
+                            <field name="hour_from" invisible="not schedule_enabled"/>
+                            <field name="hour_to" invisible="not schedule_enabled"/>
+                        </group>
+                    </group>
+
+                    <group string="Condiciones de Activación">
+                        <field name="keyword_filter"/>
+                        <field name="keywords" invisible="not keyword_filter"
+                               placeholder="debo&#10;pagar&#10;reclamo&#10;factura"/>
+                        <field name="keyword_mode" invisible="not keyword_filter"/>
+                        <field name="only_if_unassigned"/>
+                        <field name="no_human_reply_minutes"/>
+                        <field name="context_model"/>
+                    </group>
+
+                    <group string="Acción Fallback">
+                        <field name="fallback_action"/>
+                        <field name="fallback_message"
+                               invisible="fallback_action != 'message'"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ai.activation.rule — List View
+    ==================================================================== -->
+    <record id="view_ai_activation_rule_list" model="ir.ui.view">
+        <field name="name">ai.activation.rule.list</field>
+        <field name="model">ai.activation.rule</field>
+        <field name="arch" type="xml">
+            <list string="Reglas de Activación" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="priority"/>
+                <field name="name"/>
+                <field name="agent_id"/>
+                <field name="keyword_filter" widget="boolean_toggle"/>
+                <field name="keywords" optional="show"/>
+                <field name="only_if_unassigned" widget="boolean_toggle"/>
+                <field name="fallback_action"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         Action window
+    ==================================================================== -->
+    <record id="action_ai_activation_rule" model="ir.actions.act_window">
+        <field name="name">Reglas de Activación</field>
+        <field name="res_model">ai.activation.rule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

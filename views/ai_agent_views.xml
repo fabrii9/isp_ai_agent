@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         ai.agent — Form View
+    ==================================================================== -->
+    <record id="view_ai_agent_form" model="ir.ui.view">
+        <field name="name">ai.agent.form</field>
+        <field name="model">ai.agent</field>
+        <field name="arch" type="xml">
+            <form string="Agente AI">
+                <header>
+                    <button name="action_activate" string="Activar" type="object"
+                            class="btn-primary"
+                            invisible="state == 'active'"/>
+                    <button name="action_pause" string="Pausar" type="object"
+                            class="btn-warning"
+                            invisible="state != 'active'"/>
+                    <button name="action_draft" string="A Borrador" type="object"
+                            invisible="state == 'draft'"/>
+                    <button name="action_test_prompt" string="Testear Prompt"
+                            type="object" class="btn-secondary"/>
+                    <button name="action_view_logs" string="Ver Logs"
+                            type="object" class="btn-secondary"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,active,paused"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Nombre del agente..."/></h1>
+                    </div>
+
+                    <group>
+                        <group string="Configuración">
+                            <field name="channel"/>
+                            <field name="provider"/>
+                            <field name="model_name"/>
+                            <field name="company_id"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Parámetros LLM">
+                            <field name="temperature"/>
+                            <field name="max_tokens"/>
+                            <field name="api_key_param" readonly="1"/>
+                            <field name="endpoint" invisible="provider != 'custom'"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <!-- TAB: Prompts -->
+                        <page string="Prompts" name="prompts">
+                            <group>
+                                <field name="system_prompt" nolabel="1"/>
+                                <field name="style_prompt" nolabel="1"/>
+                            </group>
+                        </page>
+
+                        <!-- TAB: Herramientas -->
+                        <page string="Herramientas" name="tools">
+                            <field name="enabled_tool_ids" widget="many2many_tags"
+                                   domain="[('active','=',True)]"/>
+                        </page>
+
+                        <!-- TAB: Memoria y Ejecución -->
+                        <page string="Memoria y Ejecución" name="memory">
+                            <group>
+                                <group string="Memoria">
+                                    <field name="memory_mode"/>
+                                    <field name="memory_limit"/>
+                                </group>
+                                <group string="Modo de Ejecución">
+                                    <field name="execution_mode"/>
+                                    <field name="auto_escalate_mode"/>
+                                    <field name="escalate_after_minutes"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- TAB: Reglas de Activación -->
+                        <page string="Reglas de Activación" name="rules">
+                            <field name="activation_rule_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="priority"/>
+                                    <field name="name"/>
+                                    <field name="keyword_filter"/>
+                                    <field name="keywords"/>
+                                    <field name="only_if_unassigned"/>
+                                    <field name="fallback_action"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- TAB: Horario -->
+                        <page string="Horario" name="schedule">
+                            <group>
+                                <field name="schedule_enabled"/>
+                            </group>
+                            <field name="schedule_ids" invisible="not schedule_enabled">
+                                <list editable="bottom">
+                                    <field name="day_of_week"/>
+                                    <field name="hour_from"/>
+                                    <field name="hour_to"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- TAB: WhatsApp -->
+                        <page string="WhatsApp" name="whatsapp">
+                            <group>
+                                <field name="allowed_wa_account_ids" widget="many2many_tags"/>
+                                <field name="allowed_phone_numbers"/>
+                                <field name="allowed_company_ids" widget="many2many_tags"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ai.agent — List View
+    ==================================================================== -->
+    <record id="view_ai_agent_list" model="ir.ui.view">
+        <field name="name">ai.agent.list</field>
+        <field name="model">ai.agent</field>
+        <field name="arch" type="xml">
+            <list string="Agentes AI"
+                  decoration-success="state == 'active'"
+                  decoration-warning="state == 'paused'"
+                  decoration-muted="state == 'draft'">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="channel"/>
+                <field name="provider"/>
+                <field name="model_name"/>
+                <field name="execution_mode"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-warning="state == 'paused'"
+                       decoration-muted="state == 'draft'"/>
+                <field name="log_count" string="Logs"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ai.agent — Search View
+    ==================================================================== -->
+    <record id="view_ai_agent_search" model="ir.ui.view">
+        <field name="name">ai.agent.search</field>
+        <field name="model">ai.agent</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="provider"/>
+                <filter string="Activos" name="active_agents"
+                        domain="[('state','=','active')]"/>
+                <filter string="Pausados" name="paused_agents"
+                        domain="[('state','=','paused')]"/>
+                <filter string="WhatsApp" name="whatsapp_channel"
+                        domain="[('channel','=','whatsapp')]"/>
+                <separator/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_channel" string="Canal"
+                            context="{'group_by': 'channel'}"/>
+                    <filter name="group_provider" string="Proveedor"
+                            context="{'group_by': 'provider'}"/>
+                    <filter name="group_state" string="Estado"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         Action window
+    ==================================================================== -->
+    <record id="action_ai_agent" model="ir.actions.act_window">
+        <field name="name">Agentes AI</field>
+        <field name="res_model">ai.agent</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ai_agent_search"/>
+        <field name="context">{'search_default_active_agents': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Creá tu primer agente AI
+            </p>
+            <p>
+                Un agente AI puede responder mensajes de WhatsApp,
+                consultar deudas, generar links de pago y crear tickets.
+            </p>
+        </field>
+    </record>
+
+</odoo>

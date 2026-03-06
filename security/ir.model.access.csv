@@ -1,0 +1,16 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ai_agent_manager,ai.agent.manager,model_ai_agent,isp_ai_agent.group_ai_manager,1,1,1,1
+access_ai_agent_operator,ai.agent.operator,model_ai_agent,isp_ai_agent.group_ai_operator,1,0,0,0
+access_ai_tool_manager,ai.tool.manager,model_ai_tool,isp_ai_agent.group_ai_manager,1,1,1,1
+access_ai_tool_operator,ai.tool.operator,model_ai_tool,isp_ai_agent.group_ai_operator,1,0,0,0
+access_ai_activation_rule_manager,ai.activation.rule.manager,model_ai_activation_rule,isp_ai_agent.group_ai_manager,1,1,1,1
+access_ai_activation_rule_operator,ai.activation.rule.operator,model_ai_activation_rule,isp_ai_agent.group_ai_operator,1,0,0,0
+access_ai_workflow_manager,ai.workflow.manager,model_ai_workflow,isp_ai_agent.group_ai_manager,1,1,1,1
+access_ai_workflow_operator,ai.workflow.operator,model_ai_workflow,isp_ai_agent.group_ai_operator,1,0,0,0
+access_ai_workflow_action_manager,ai.workflow.action.manager,model_ai_workflow_action,isp_ai_agent.group_ai_manager,1,1,1,1
+access_ai_workflow_action_operator,ai.workflow.action.operator,model_ai_workflow_action,isp_ai_agent.group_ai_operator,1,0,0,0
+access_ai_log_manager,ai.log.manager,model_ai_log,isp_ai_agent.group_ai_manager,1,1,1,1
+access_ai_log_operator,ai.log.operator,model_ai_log,isp_ai_agent.group_ai_operator,1,0,0,0
+access_ai_agent_schedule_manager,ai.agent.schedule.manager,model_ai_agent_schedule,isp_ai_agent.group_ai_manager,1,1,1,1
+access_ai_agent_schedule_operator,ai.agent.schedule.operator,model_ai_agent_schedule,isp_ai_agent.group_ai_operator,1,0,0,0
+access_ai_test_prompt_wizard_all,ai.test.prompt.wizard.all,model_ai_test_prompt_wizard,isp_ai_agent.group_ai_operator,1,1,1,1

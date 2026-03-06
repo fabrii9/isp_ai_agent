@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ===================================================================
+         ai.log — Form View
+    ==================================================================== -->
+    <record id="view_ai_log_form" model="ir.ui.view">
+        <field name="name">ai.log.form</field>
+        <field name="model">ai.log</field>
+        <field name="arch" type="xml">
+            <form string="Log AI" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <group string="Contexto">
+                            <field name="agent_id" readonly="1"/>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="channel_id" readonly="1"/>
+                            <field name="mobile_number" readonly="1"/>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                        <group string="Estado">
+                            <field name="state" widget="badge"
+                                   decoration-success="state == 'ok'"
+                                   decoration-danger="state in ('tool_error','llm_error')"
+                                   decoration-warning="state in ('confirmation_pending','escalated')"
+                                   readonly="1"/>
+                            <field name="activation_decision" readonly="1"/>
+                            <field name="matched_rule_id" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Métricas">
+                        <field name="execution_time_ms" readonly="1"/>
+                        <field name="tokens_input" readonly="1"/>
+                        <field name="tokens_output" readonly="1"/>
+                        <field name="estimated_cost_usd" readonly="1"/>
+                        <field name="retry_count" readonly="1"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Mensaje y Respuesta">
+                            <group>
+                                <field name="inbound_message" widget="text" readonly="1"/>
+                                <field name="final_response" widget="text" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Prompt enviado">
+                            <field name="prompt_sent" widget="ace"
+                                   options="{'mode': 'json'}" readonly="1" nolabel="1"/>
+                        </page>
+                        <page string="Tools">
+                            <field name="tools_available" widget="ace"
+                                   options="{'mode': 'json'}" readonly="1" nolabel="1"/>
+                        </page>
+                        <page string="Tool Ejecutada">
+                            <group>
+                                <field name="tool_called" readonly="1"/>
+                                <field name="tool_params" widget="ace"
+                                       options="{'mode': 'json'}" readonly="1"/>
+                                <field name="tool_result" widget="ace"
+                                       options="{'mode': 'json'}" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Respuesta LLM">
+                            <field name="llm_raw_response" widget="ace"
+                                   options="{'mode': 'json'}" readonly="1" nolabel="1"/>
+                        </page>
+                        <page string="Errores" invisible="not error_message">
+                            <field name="error_message" widget="text" readonly="1" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ai.log — List View
+    ==================================================================== -->
+    <record id="view_ai_log_list" model="ir.ui.view">
+        <field name="name">ai.log.list</field>
+        <field name="model">ai.log</field>
+        <field name="arch" type="xml">
+            <list string="Logs AI" create="false" edit="false"
+                  decoration-danger="state in ('tool_error','llm_error')"
+                  decoration-warning="state == 'confirmation_pending'"
+                  decoration-muted="state == 'skipped'">
+                <field name="create_date" string="Fecha"/>
+                <field name="agent_id"/>
+                <field name="partner_id"/>
+                <field name="mobile_number"/>
+                <field name="inbound_message" string="Mensaje" optional="show"/>
+                <field name="tool_called" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'ok'"
+                       decoration-danger="state in ('tool_error','llm_error')"
+                       decoration-warning="state == 'confirmation_pending'"
+                       decoration-muted="state == 'skipped'"/>
+                <field name="execution_time_ms" string="ms" optional="show"/>
+                <field name="tokens_input" optional="show"/>
+                <field name="tokens_output" optional="show"/>
+                <field name="estimated_cost_usd" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         ai.log — Search View
+    ==================================================================== -->
+    <record id="view_ai_log_search" model="ir.ui.view">
+        <field name="name">ai.log.search</field>
+        <field name="model">ai.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="agent_id"/>
+                <field name="partner_id"/>
+                <field name="mobile_number"/>
+                <field name="tool_called"/>
+                <filter string="Exitosos" name="ok" domain="[('state','=','ok')]"/>
+                <filter string="Con errores" name="errors"
+                        domain="[('state','in',('tool_error','llm_error'))]"/>
+                <filter string="Omitidos" name="skipped"
+                        domain="[('state','=','skipped')]"/>
+                <filter string="Hoy" name="today"
+                        domain="[('create_date','>=', (context_today()).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="by_agent" string="Agente"
+                            context="{'group_by': 'agent_id'}"/>
+                    <filter name="by_partner" string="Partner"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter name="by_state" string="Estado"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="by_tool" string="Tool"
+                            context="{'group_by': 'tool_called'}"/>
+                    <filter name="by_day" string="Día"
+                            context="{'group_by': 'create_date:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===================================================================
+         Action window
+    ==================================================================== -->
+    <record id="action_ai_log" model="ir.actions.act_window">
+        <field name="name">Logs AI</field>
+        <field name="res_model">ai.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ai_log_search"/>
+        <field name="context">{'search_default_today': 1}</field>
+    </record>
+
+</odoo>
